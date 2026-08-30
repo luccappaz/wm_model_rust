@@ -2,7 +2,6 @@
 
 [![Crates.io](https://img.shields.io/crates/v/wm_fuzzy.svg)](https://crates.io/crates/wm_fuzzy)
 [![Documentation](https://docs.rs/wm_fuzzy/badge.svg)](https://docs.rs/wm_fuzzy)
-[![CI](https://github.com/your-username/wm_fuzzy/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/wm_fuzzy/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
 A high-performance Rust implementation of the **Wang-Mendel (WM) algorithm** for automated fuzzy rule generation, inference, and binary/continuous classification from numerical data.
@@ -166,4 +165,4 @@ cargo run --example demo
 
 ## License
 
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+* MIT license [LICENSE]

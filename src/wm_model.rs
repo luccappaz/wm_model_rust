@@ -154,14 +154,23 @@ impl WMModel {
     /// assert_eq!(WMModel::mb_function(15.0, [10.0, 20.0, 30.0]), 0.5);
     /// assert_eq!(WMModel::mb_function(35.0, [10.0, 20.0, 30.0]), 0.0);
     /// ```
-    pub fn mb_function(x: f64, [a, b, c]: [f64; 3]) -> f64 {
-        if x <= a || x >= c {
-            0.0
-        } else if x <= b {
-            (x - a) / (b - a)
-        } else {
-            (c - x) / (c - b)
+    fn mb_function(x: f64, [a, b, c]: [f64; 3]) -> f64 {
+        if a == b && x <= b {
+            return 1.0;
         }
+        if b == c && x >= b {
+            return 1.0;
+        }
+        if x == b {
+            return 1.0;
+        }
+        if a != b && x > a && x < b {
+            return (x - a) / (b - a);
+        }
+        if b != c && x > b && x < c {
+            return (c - x) / (c - b);
+        }
+        0.0
     }
 
     /// Computes the $[a, b, c]$ parameters of a triangular membership function.
@@ -295,7 +304,7 @@ impl WMModel {
 
             let sum_strength: f64 = rule_strength.iter().sum();
 
-            if sum_strength < 1.0 {
+            if sum_strength < 0.0 {
                 continue;
             }
 
@@ -868,11 +877,12 @@ mod tests {
 
         // TNorm::Product = 0.8 * 0.5 = 0.40
         let strength_prod =
-            WMModel::calculate_firing_strength(&rule, &memberships, TNorm::Product);
+            WMModel::calculate_firing_strength(&rule.antecedents, &memberships, TNorm::Product);
         assert!((strength_prod - 0.40).abs() < EPSILON);
 
         // TNorm::Min = min(0.8, 0.5) = 0.50
-        let strength_min = WMModel::calculate_firing_strength(&rule, &memberships, TNorm::Min);
+        let strength_min =
+            WMModel::calculate_firing_strength(&rule.antecedents, &memberships, TNorm::Min);
         assert!((strength_min - 0.50).abs() < EPSILON);
     }
 
@@ -902,8 +912,7 @@ mod tests {
         let features = vec!["temp".to_string(), "pressure".to_string()];
 
         // Rule extraction using permissive filters
-        let generated_rules =
-            model.generate_rules(&x, &y, &features, TNorm::Product, 0.1, 0.0);
+        let generated_rules = model.generate_rules(&x, &y, &features, TNorm::Product, 0.1, 0.0);
 
         assert!(!generated_rules.is_empty());
         assert_eq!(model.rules.len(), generated_rules.len());
