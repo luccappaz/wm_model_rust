@@ -2,78 +2,56 @@ use std::collections::HashMap;
 use wm_fuzzy::{Granularity, TNorm, WMModel, WMModelError};
 
 fn main() -> Result<(), WMModelError> {
-    println!("=== Wang-Mendel Fuzzy Inference System ===");
+    println!("==================================================");
+    println!("    METABOLIC SYNDROME - (FAKE) FUZZY INFERENCE CLI      ");
+    println!("==================================================");
+
+    println!("\nThe weighted average value stands for the chance to have the SM");
+    println!("\nATTENTION: Values only for testing!");
 
     let mut model = WMModel::new();
 
-    // 1. Configure universes of discourse and linguistic partitions
-    model
-        .granularity
-        .insert("temperature".to_string(), Granularity::Three);
-    model
-        .granularity
-        .insert("pressure".to_string(), Granularity::Three);
+    // 1. Carrega as regras salvas
+    model.load_rules("examples/rules.json")?;
+    println!("✓ Loaded {} rules from rules.json\n", model.rules.len());
 
-    model.labels.insert(
-        "temperature".to_string(),
-        vec!["low".to_string(), "medium".to_string(), "high".to_string()],
-    );
-    model.labels.insert(
-        "pressure".to_string(),
-        vec!["low".to_string(), "medium".to_string(), "high".to_string()],
-    );
-
-    model
-        .limits
-        .insert("temperature".to_string(), vec![10.0, 25.0, 40.0]);
-    model
-        .limits
-        .insert("pressure".to_string(), vec![80.0, 100.0, 120.0]);
-
-    // 2. Synthetic dataset for rule generation
-    let mut x_train = Vec::new();
-    let mut y_train = Vec::new();
-
-    let samples = [
-        (12.0, 85.0, 0.1),
-        (24.0, 100.0, 0.5),
-        (38.0, 118.0, 0.9),
-        (15.0, 90.0, 0.2),
-        (35.0, 110.0, 0.8),
+    // 2. Configura as variáveis de entrada da Síndrome Metabólica
+    let features = vec![
+        "age",
+        "waist_thigh_ratio",
+        "waist_hip_ratio",
+        "sleep_hours_per_night",
+        "physical_activity_categorized",
     ];
 
-    for &(temp, pressure, target) in &samples {
-        let mut row = HashMap::new();
-        row.insert("temperature".to_string(), temp);
-        row.insert("pressure".to_string(), pressure);
-        x_train.push(row);
-        y_train.push(target);
+    let labels = vec!["low".to_string(), "medium".to_string(), "high".to_string()];
+
+    let limits_map: HashMap<&str, Vec<f64>> = HashMap::from([
+        ("age", vec![20.0, 45.0, 70.0]),
+        ("waist_thigh_ratio", vec![1.0, 1.4, 1.8]),
+        ("waist_hip_ratio", vec![0.70, 0.85, 1.00]),
+        ("sleep_hours_per_night", vec![4.0, 7.0, 10.0]),
+        ("physical_activity_categorized", vec![0.0, 2.5, 5.0]),
+    ]);
+
+    for &feat in &features {
+        model
+            .granularity
+            .insert(feat.to_string(), Granularity::Three);
+        model.labels.insert(feat.to_string(), labels.clone());
+        model
+            .limits
+            .insert(feat.to_string(), limits_map[feat].clone());
     }
 
-    let features = vec!["temperature".to_string(), "pressure".to_string()];
+    model.build_mf_config();
 
-    // 3. Rule generation and persistence
-    println!("\n[1/3] Generating fuzzy rules...");
-    let rules = model.generate_rules(&x_train, &y_train, &features, TNorm::Product, 0.01, 0.1);
-    println!("Total rules extracted: {}", rules.len());
-
-    model.save_rules("fuzzy_rules.json")?;
-    println!("Rules saved to: fuzzy_rules.json");
-
-    // 4. Interactive user inference
-    println!("\n[2/3] Interactive Inference Mode");
+    // 3. Solicita os antecedentes interativamente ao usuário
     let user_antecedents = model.prompt_antecedents();
+
+    // 4. Executa a inferência difusa
+    println!("\n--- INFERENCE RESULT ---");
     model.infer(&user_antecedents, TNorm::Product);
-
-    // 5. Model evaluation
-    println!("\n[3/3] Evaluating model metrics...");
-    let y_test_bin = vec![0, 1, 1, 0, 1];
-    let metrics = model.evaluate(&x_train, &y_test_bin, None)?;
-
-    println!("Accuracy:  {:.2}%", metrics.accuracy * 100.0);
-    println!("Precision: {:.4}", metrics.precision);
-    println!("Recall:    {:.4}", metrics.recall);
-    println!("F1-Score:  {:.4}", metrics.f1_score);
 
     Ok(())
 }

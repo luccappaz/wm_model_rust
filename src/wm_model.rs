@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, BufReader, BufWriter, Write};
 use std::path::Path;
 use thiserror::Error;
 
@@ -14,6 +14,10 @@ pub struct Antecedents {
 impl Antecedents {
     pub fn new(data: HashMap<String, String>) -> Self {
         Self { data }
+    }
+
+    pub fn get(&self, feature: &str) -> Option<&String> {
+        self.data.get(feature)
     }
 
     /// Computes the Euclidean distance between two antecedent sets in the continuous domain
@@ -58,7 +62,7 @@ pub struct FuzzyRule {
     pub antecedents: Antecedents,
     pub weighted_average: f64,
     pub weighted_variance: f64,
-    pub doc: f64,
+    pub doc: f64, // degree of confidence
     pub support: f64,
 }
 
@@ -546,17 +550,22 @@ impl WMModel {
     }
 
     /// Serializes and saves the rule base to a JSON file.
-    pub fn save_rules<P: AsRef<Path>>(&self, path: P) -> Result<(), WMModelError> {
+    pub fn save_rules<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
         let file = File::create(path)?;
-        serde_json::to_writer_pretty(file, &self.rules)?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer_pretty(writer, &self.rules)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         Ok(())
     }
 
     /// Loads fuzzy rules from a JSON file into `self.rules`.
-    pub fn load_rules<P: AsRef<Path>>(&mut self, path: P) -> Result<(), WMModelError> {
+    pub fn load_rules<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
         let file = File::open(path)?;
-        let loaded_rules: Vec<FuzzyRule> = serde_json::from_reader(file)?;
-        self.rules.extend(loaded_rules);
+        let reader = BufReader::new(file);
+        let rules: Vec<FuzzyRule> = serde_json::from_reader(reader)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+        self.rules = rules;
         Ok(())
     }
 
