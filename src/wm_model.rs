@@ -553,8 +553,7 @@ impl WMModel {
     pub fn save_rules<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
-        serde_json::to_writer_pretty(writer, &self.rules)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        serde_json::to_writer_pretty(writer, &self.rules).map_err(io::Error::other)?;
         Ok(())
     }
 
