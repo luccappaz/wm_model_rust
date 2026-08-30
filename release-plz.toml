@@ -1,0 +1,10 @@
+[workspace]
+publish = true
+
+[changelog]
+header = "# Changelog\n\nAll notable changes to this project will be documented in this file."
+
+[changelog.commit_parsers]
+features = [{ message = "^feat", group = "Features" }]
+fixes = [{ message = "^fix", group = "Bug Fixes" }]
+others = [{ message = "^perf", group = "Performance Improvements" }]
