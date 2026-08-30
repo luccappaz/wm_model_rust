@@ -165,6 +165,10 @@ cargo run --example demo
 
 ---
 
+## Demo
+
+![Metabolic Syndrome CLI Demo](assets/demo.gif)
+
 ## License
 
 * MIT license [LICENSE]
